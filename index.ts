@@ -22,20 +22,18 @@ interface ResponseBody {
   taxaJurosAoMes: number,
 }
 
-// -> retorna lista de parcelas acrecidas de taxa selic, somente se for acima de 6 parcelas
-
 app.use(express.json())
 
 app.post('/', async (req: Request, res: Response) => {
   const taxaJurosAoMes = await (await axios.get('http://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados/ultimos/1?formato=json')).data[0].valor
 
   const { produto, condicaoPagamento } = req.body as RequestBody
-  let valorParcela = produto.valor / condicaoPagamento.qtdeParcelas
+  let valorParcela = (produto.valor - condicaoPagamento.valorEntrada) / condicaoPagamento.qtdeParcelas  
 
   let parcelas: Array<ResponseBody> = []
 
   if (condicaoPagamento.qtdeParcelas > 6) {
-    valorParcela *= taxaJurosAoMes
+    valorParcela += valorParcela * taxaJurosAoMes
   }
 
   for (let i: number = 0; i < condicaoPagamento.qtdeParcelas; i++) {
